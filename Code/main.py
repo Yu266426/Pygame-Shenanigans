@@ -10,9 +10,11 @@ from pygame import Rect, mixer
 pygame.init()
 
 # File Setup
-APP_FOLDER = os.path.dirname(os.path.realpath(sys.argv[0]))
-DATA_FOLDER = os.path.join(APP_FOLDER, "Data")
-AUDIO_FOLDER = os.path.join(DATA_FOLDER, "Audio")
+APP_FOLDER = os.path.dirname(os.path.realpath(sys.argv[0])) # Gets Current Path
+DATA_FOLDER = os.path.join(APP_FOLDER, "data") # Path For Data Folder
+ASSET_FOLDER = os.path.join(DATA_FOLDER, "assets")
+AUDIO_FOLDER = os.path.join(DATA_FOLDER, "audio") # Path For Audio Folder
+EXPLOSION_FOLDER = os.path.join(DATA_FOLDER, "explosions") # Path For Explosions Folder
 
 # Screen Setup
 screenScale = 0.7
@@ -34,21 +36,26 @@ deltaTime = 0
 volume = 100/100
 
 # Game Objects
-class Player:
+class GameObject:
+    def __init__ (self, x, y, scale):
+        self.x = x
+        self.y = y
+
+        self.scale = scale
+
+class Player(GameObject):
     def __init__(self, x, y):
+        super().__init__(x, y, int(screenHeight/16))
+
         self.acceleration = 0.9 * screenScale
         self.drag = 0.9
 
         self.alive = True
 
-        self.scale = int(screenHeight/16)
-        self.image = pygame.image.load(os.path.join(DATA_FOLDER, "Player.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Player.png"))
         self.image = pygame.transform.scale(self.image , (self.scale, self.scale))
 
         self.collisionOffset = self.scale/2
-
-        self.x = x
-        self.y = y
         
         self.xInput = 0
         self.yInput = 0
@@ -87,20 +94,16 @@ class Player:
                 self.yInput -= -1
             if(event.key == down):
                 self.yInput -= 1
-
-    # Calculates The Different Movements
-    def moveX(self):
-        self.xMovement += self.acceleration * self.xInput
-        self.xMovement *= self.drag
-    
-    def moveY(self):
-        self.yMovement += self.acceleration * self.yInput
-        self.yMovement *= self.drag
     
     # Moves The Player
     def movePlayer(self):
-        self.moveX()
-        self.moveY()
+        # Move X
+        self.xMovement += self.acceleration * self.xInput
+        self.xMovement *= self.drag
+
+        # Move Y
+        self.yMovement += self.acceleration * self.yInput
+        self.yMovement *= self.drag
 
         # Attempt to normalize movement
         if(self.xInput != 0 and self.yInput != 0):
@@ -128,7 +131,7 @@ class Player:
         self.angle = math.degrees(math.atan2(self.y - (mouseY - self.scale / 2), mouseX - (self.x + self.scale / 2)))
 
     # Draws The player With Rotation
-    def drawPlayer(self):
+    def render(self):
         rotatedPlayerImage = pygame.transform.rotate(self.image, self.angle)
         newRect = rotatedPlayerImage.get_rect(center = self.image.get_rect(topleft = (self.x, self.y)).center)
         screen.blit(rotatedPlayerImage, newRect)
@@ -171,16 +174,14 @@ class Player:
         self.score = 0
 
     # Runs Most Needed Functions
-    def updatePlayer(self):
+    def tick(self):
         self.movePlayer()
 
         self.getRelativeAngle()
-        self.drawPlayer()
 
-class Laser:
+class Laser(GameObject):
     def __init__(self, x, y, direction, speed, player):
-        self.x = x
-        self.y = y
+        super().__init__(x, y, int(screenHeight/104))
 
         self.direction = direction
 
@@ -188,8 +189,7 @@ class Laser:
 
         self.speed = speed * screenScale
 
-        self.scale = int(screenHeight/104)
-        self.image = pygame.image.load(os.path.join(DATA_FOLDER, "Laser.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Laser.png"))
         self.image = pygame.transform.scale(self.image, (int(self.scale*3.5), self.scale))
 
         self.collisionOffset = self.scale/3
@@ -210,12 +210,12 @@ class Laser:
         self.y += -1 * math.sin(math.radians(self.direction)) * self.scale * 2.75
 
     # Moves In Direction
-    def move(self):
+    def tick(self):
         self.x += math.cos(math.radians(self.direction)) * self.speed * deltaTime * targetFPS
         self.y += -1 * math.sin(math.radians(self.direction)) * self.speed * deltaTime * targetFPS
 
     # Draws With Rotation
-    def draw(self):
+    def render(self):
         rotatedImage = pygame.transform.rotate(self.image, self.direction)
         newRect = rotatedImage.get_rect(center = self.image.get_rect(topleft = (self.x, self.y)).center)
         screen.blit(rotatedImage, newRect)
@@ -240,13 +240,11 @@ class Laser:
     def check(self):
         return self.x < -50 or self.x > screenWidth + 50 or self.y < -50 or self.y > screenHeight + 50
 
-class LargeAsteroid:
+class LargeAsteroid(GameObject):
     def __init__(self, x, y, player):
-        self.x = x
-        self.y = y
+        super().__init__(x, y, int(screenHeight / 4))
 
-        self.scale = int(screenHeight / 4)
-        self.image = pygame.image.load(os.path.join(DATA_FOLDER, "Large Asteroid.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Large Asteroid.png"))
         self.image = pygame.transform.scale(self.image, (self.scale, self.scale))
 
         self.collisionOffset = self.scale/2
@@ -272,14 +270,14 @@ class LargeAsteroid:
         self.score = 20
 
     # Moves In Direction and rotates
-    def move(self):
+    def tick(self):
         self.x += math.cos(math.radians(self.direction)) * self.speed * deltaTime * targetFPS
         self.y += -1 * math.sin(math.radians(self.direction)) * self.speed * deltaTime * targetFPS
 
         self.angle += self.spinSpeed * self.spinDirection * deltaTime * targetFPS
     
     # Draws With Rotation
-    def draw(self):
+    def render(self):
         rotatedImage = pygame.transform.rotate(self.image, self.angle)
         newRect = rotatedImage.get_rect(center = self.image.get_rect(topleft = (self.x, self.y)).center)
         screen.blit(rotatedImage, newRect)
@@ -315,13 +313,11 @@ class LargeAsteroid:
         else:
             return False
 
-class MediumAsteroid:
+class MediumAsteroid(GameObject):
     def __init__(self, x, y, direction):
-        self.x = x
-        self.y = y
+        super().__init__(x, y, int(screenHeight / 9))
 
-        self.scale = int(screenHeight / 9)
-        self.image = pygame.image.load(os.path.join(DATA_FOLDER, "Medium Asteroid.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Medium Asteroid.png"))
         self.image = pygame.transform.scale(self.image, (self.scale, self.scale))
 
         self.collisionOffset = self.scale/2
@@ -347,14 +343,14 @@ class MediumAsteroid:
         self.score = 5
 
     # Moves In Direction and rotates
-    def move(self):
+    def tick(self):
         self.x += math.cos(math.radians(self.direction)) * self.speed * deltaTime * targetFPS
         self.y += -1 * math.sin(math.radians(self.direction)) * self.speed * deltaTime * targetFPS
 
         self.angle += self.spinSpeed * self.spinDirection * deltaTime * targetFPS
     
     # Draws With Rotation
-    def draw(self):
+    def render(self):
         rotatedImage = pygame.transform.rotate(self.image, self.angle)
         newRect = rotatedImage.get_rect(center = self.image.get_rect(topleft = (self.x, self.y)).center)
         screen.blit(rotatedImage, newRect)
@@ -389,10 +385,9 @@ class MediumAsteroid:
             return False
 
 # Explosions
-class Explosion:
+class Explosion(GameObject):
     def __init__ (self, x, y, maxFrame, scale, FRAME_PATH):
-        self.x = x
-        self.y = y
+        super().__init__(x, y)
 
         self.frame = -1
         self.maxFrame = maxFrame
@@ -404,10 +399,10 @@ class Explosion:
             img = pygame.transform.scale(img, (self.scale, self.scale))
             self.frames.append(img)
     
-    def move(self):
+    def tick(self):
         self.frame += 1
 
-    def draw(self):
+    def render(self):
         if(self.frame<self.maxFrame):
             screen.blit(self.frames[self.frame], (self.x, self.y))
 
@@ -416,19 +411,19 @@ class Explosion:
 
 class PlayerExplosion(Explosion):
     def __init__ (self, x, y):
-        super().__init__(x, y, 15, int(screenHeight/6), os.path.join(DATA_FOLDER, "Player Death"))
+        super().__init__(x, y, 15, int(screenHeight/6), os.path.join(EXPLOSION_FOLDER, "Player Death Explosion"))
 
 class LaserExplosion(Explosion):
     def __init__(self, x, y):
-        super().__init__(x, y, 6, int(screenHeight/26), os.path.join(DATA_FOLDER, "Laser Explosion"))
+        super().__init__(x, y, 6, int(screenHeight/26), os.path.join(EXPLOSION_FOLDER, "Laser Explosion"))
 
 class LargeAsteroidExplosion(Explosion):
     def __init__ (self, x, y):
-        super().__init__(x, y, 17, int(screenHeight * 7/16), os.path.join(DATA_FOLDER, "Large Asteroid Explosion"))
+        super().__init__(x, y, 17, int(screenHeight * 7/16), os.path.join(EXPLOSION_FOLDER, "Large Asteroid Explosion"))
 
 class MediumAsteroidExplosion(Explosion):
     def __init__ (self, x, y):
-        super().__init__(x, y, 9, int(screenHeight/6), os.path.join(DATA_FOLDER, "Medium Asteroid Explosion"))
+        super().__init__(x, y, 9, int(screenHeight/6), os.path.join(EXPLOSION_FOLDER, "Medium Asteroid Explosion"))
 
 # General List
 class ObjectList:
@@ -440,14 +435,14 @@ class ObjectList:
         self.list.append(object)
 
     # Moves All Objects In List
-    def move(self):
+    def tick(self):
         for object in self.list:
-            object.move()
+            object.tick()
     
     # Draws All Objects In List
-    def draw(self):
+    def render(self):
         for object in self.list:
-            object.draw()
+            object.render()
     
     # Checks If Object Should Be Removed And If So, Removes It
     def remove(self, object, object2, explosionList):
@@ -475,13 +470,11 @@ class ObjectList:
     def clear(self):
         self.list.clear()
 
-    # Runs All Appropiate Functions
+    # Runs Most Appropiate Functions
     def update(self):
-        self.move()
+        self.tick()
 
         self.check()
-
-        self.draw()
 
 # UI
 # Graphics
@@ -492,11 +485,11 @@ class Title:
 
         self.scale = int(screenHeight/1.75)
 
-        self.image = pygame.image.load(os.path.join(DATA_FOLDER, "Name.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Title.png"))
         self.image = pygame.transform.scale(self.image, (self.scale * 2, self.scale))
         
     
-    def draw(self):
+    def render(self):
         screen.blit(self.image, (self.x, self.y))
 
 class Text:
@@ -509,18 +502,18 @@ class Text:
         self.font = pygame.font.Font(os.path.join(DATA_FOLDER, "Moonrising.ttf"), size)
 
     # Draw From The Left    
-    def drawCentered(self, text):
+    def renderCentered(self, text):
         textRendered = self.font.render(str(text), True, self.colour)
         screen.blit(textRendered, (self.x, self.y)) 
 
     # Draw From The Center    
-    def drawCentered(self, text):
+    def renderCentered(self, text):
         textRendered = self.font.render(str(text), True, self.colour)
         textRect = textRendered.get_rect()
         screen.blit(textRendered, (self.x - (textRect.right - textRect.left)/2, self.y)) 
 
     # Draw From The Right
-    def drawRight(self, text):
+    def renderRight(self, text):
         textRendered = self.font.render(str(text), True, self.colour)
         textRect = textRendered.get_rect()
         screen.blit(textRendered, (self.x - (textRect.right - textRect.left), self.y)) 
@@ -539,7 +532,7 @@ class Bar:
 
         self.backRect = Rect(self.x, self.y, self.width, self.height)
 
-    def draw(self, fillTotal, fillAmount):
+    def render(self, fillTotal, fillAmount):
         # Background
         pygame.draw.rect(screen, self.backColour, self.backRect)
 
@@ -558,7 +551,7 @@ class StartButton:
 
         self.scale = int(screenHeight/5)
 
-        self.image = pygame.image.load(os.path.join(DATA_FOLDER, "Start Button.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Start Button.png"))
         self.image = pygame.transform.scale(self.image, (int(self.scale * 2.3), self.scale))
 
         self.pressedSound = mixer.Sound(os.path.join(AUDIO_FOLDER, "Laser.wav"))
@@ -581,7 +574,7 @@ class StartButton:
         return False
 
     # Draw Button
-    def draw(self):
+    def render(self):
         rotatedImage = self.image
 
         # If selected, enlarge slightly
@@ -741,8 +734,8 @@ while(playing):
                 gameState = "main"
                 timeCount = 0
             
-            startButton.draw()
-            title.draw()
+            startButton.render()
+            title.render()
 
         if(gameState == "main"):
             # Small Wait Right After Starting
@@ -788,7 +781,7 @@ while(playing):
 
             # Process Player
             if(player.alive == True):
-                player.updatePlayer()
+                player.tick()
             else:
                 # Wait After Dying
                 if(deathTime == 0):
@@ -796,13 +789,23 @@ while(playing):
                 elif(timeCount - deathTime > 4):
                     gameState = "death"
             
-            # UI
-            healthBar.draw(playerTemp.health, player.health)
+            # Draw Everything
+            if(player.alive == True):
+                player.render()
 
-            score.drawRight(player.score)
+            asteroidList.render()
+
+            laserList.render()
+
+            explosionList.render()
+
+            # UI
+            healthBar.render(playerTemp.health, player.health)
+
+            score.renderRight(player.score)
 
         if(gameState == "death"):
-            finalScore.drawCentered(player.score)
+            finalScore.renderCentered(player.score)
             if(timeCount - (deathTime + 4) > 4):
                 gameState = "restart"
 
