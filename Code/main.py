@@ -801,12 +801,12 @@ while(playing):
                     gameState = "death"
             
             # Draw Everything
-            if(player.alive == True):
-                player.render()
-
             asteroidList.render()
 
             laserList.render()
+
+            if(player.alive == True):
+                player.render()
 
             explosionList.render()
 
