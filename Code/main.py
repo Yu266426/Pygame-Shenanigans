@@ -7,7 +7,13 @@ import sys
 import pygame
 from pygame import Rect, mixer
 
+# Initalization
+# Initialize Mixer Then Pygame To Improve Sound Quality
+pygame.mixer.pre_init()
 pygame.init()
+
+# Limit Events
+pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN, pygame.KEYUP])
 
 # File Setup
 APP_FOLDER = os.path.dirname(os.path.realpath(sys.argv[0])) # Gets Current Path
@@ -23,7 +29,9 @@ screenHeight = int(screenScale * 1080)
 
 screen = pygame.display.set_mode((screenWidth, screenHeight))
 pygame.display.set_caption("Space Shooter 2: Rewritten")
-pygame.display.set_icon(pygame.image.load(os.path.join(ASSET_FOLDER, "Player.png")))
+
+icon = pygame.image.load(os.path.join(ASSET_FOLDER, "Player.png")).convert_alpha()
+pygame.display.set_icon(icon)
 
 # FPS Setup
 targetFPS = 60
@@ -52,7 +60,7 @@ class Player(GameObject):
 
         self.alive = True
 
-        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Player.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Player.png")).convert_alpha()
         self.image = pygame.transform.scale(self.image , (self.scale, self.scale))
 
         self.collisionOffset = self.scale/2
@@ -189,7 +197,7 @@ class Laser(GameObject):
 
         self.speed = speed * screenScale
 
-        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Laser.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Laser.png")).convert_alpha()
         self.image = pygame.transform.scale(self.image, (int(self.scale*3.5), self.scale))
 
         self.collisionOffset = self.scale/3
@@ -244,7 +252,7 @@ class LargeAsteroid(GameObject):
     def __init__(self, x, y, player):
         super().__init__(x, y, int(screenHeight / 4))
 
-        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Large Asteroid.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Large Asteroid.png")).convert_alpha()
         self.image = pygame.transform.scale(self.image, (self.scale, self.scale))
 
         self.collisionOffset = self.scale/2
@@ -317,7 +325,7 @@ class MediumAsteroid(GameObject):
     def __init__(self, x, y, direction):
         super().__init__(x, y, int(screenHeight / 9))
 
-        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Medium Asteroid.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Medium Asteroid.png")).convert_alpha()
         self.image = pygame.transform.scale(self.image, (self.scale, self.scale))
 
         self.collisionOffset = self.scale/2
@@ -394,7 +402,7 @@ class Explosion(GameObject):
 
         self.frames = []
         for i in range(0,self.maxFrame):
-            img = pygame.image.load(os.path.join(FRAME_PATH, str(i) + ".png"))
+            img = pygame.image.load(os.path.join(FRAME_PATH, str(i) + ".png")).convert_alpha()
             img = pygame.transform.scale(img, (self.scale, self.scale))
             self.frames.append(img)
     
@@ -484,7 +492,7 @@ class Title:
 
         self.scale = int(screenHeight/1.75)
 
-        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Title.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Title.png")).convert_alpha()
         self.image = pygame.transform.scale(self.image, (self.scale * 2, self.scale))
         
     
@@ -550,7 +558,7 @@ class StartButton:
 
         self.scale = int(screenHeight/5)
 
-        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Start Button.png"))
+        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Start Button.png")).convert_alpha()
         self.image = pygame.transform.scale(self.image, (int(self.scale * 2.3), self.scale))
 
         self.pressedSound = mixer.Sound(os.path.join(AUDIO_FOLDER, "Laser.wav"))
@@ -723,10 +731,9 @@ while(playing):
             if(event.type == pygame.KEYDOWN):
                 # Escape / Quit
                 if(event.key == pygame.K_ESCAPE):
-                    pass
-                    # running = False
-                    # break
-                    
+                    running = False
+                    playing = False
+
                 # Restart If Dead
                 if(event.key == pygame.K_SPACE):
                     if(gameState == "death"):
