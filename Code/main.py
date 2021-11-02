@@ -23,7 +23,7 @@ screenHeight = int(screenScale * 1080)
 
 screen = pygame.display.set_mode((screenWidth, screenHeight))
 pygame.display.set_caption("Space Shooter 2: Rewritten")
-pygame.display.set_icon(pygame.image.load(os.path.join(DATA_FOLDER, "Player.png")))
+pygame.display.set_icon(pygame.image.load(os.path.join(ASSET_FOLDER, "Player.png")))
 
 # FPS Setup
 targetFPS = 60
@@ -387,12 +387,11 @@ class MediumAsteroid(GameObject):
 # Explosions
 class Explosion(GameObject):
     def __init__ (self, x, y, maxFrame, scale, FRAME_PATH):
-        super().__init__(x, y)
+        super().__init__(x, y, scale)
 
         self.frame = -1
         self.maxFrame = maxFrame
 
-        self.scale = scale
         self.frames = []
         for i in range(0,self.maxFrame):
             img = pygame.image.load(os.path.join(FRAME_PATH, str(i) + ".png"))
@@ -502,7 +501,7 @@ class Text:
         self.font = pygame.font.Font(os.path.join(DATA_FOLDER, "Moonrising.ttf"), size)
 
     # Draw From The Left    
-    def renderCentered(self, text):
+    def renderLeft(self, text):
         textRendered = self.font.render(str(text), True, self.colour)
         screen.blit(textRendered, (self.x, self.y)) 
 
@@ -510,7 +509,7 @@ class Text:
     def renderCentered(self, text):
         textRendered = self.font.render(str(text), True, self.colour)
         textRect = textRendered.get_rect()
-        screen.blit(textRendered, (self.x - (textRect.right - textRect.left)/2, self.y)) 
+        screen.blit(textRendered, (self.x - (textRect.right - textRect.left) / 2, self.y)) 
 
     # Draw From The Right
     def renderRight(self, text):
@@ -673,13 +672,19 @@ explosionList = ObjectList()
 
 # Graphics
 title = Title((screenWidth - titleTemp.scale * 2) / 2, screenHeight * 1/3 - titleTemp.scale/2)
-healthBar = Bar(screenHeight/40, screenHeight / 40, screenWidth/6, screenHeight/16, (50,50,50), (18, 161, 58))
+healthBar = Bar(screenHeight / 40, screenHeight / 40, screenWidth/6, screenHeight/16, (50,50,50), (18, 161, 58))
 score = Text(screenWidth * 39/40, screenHeight / 39, (255,255,255), int(screenHeight/25))
 
-finalScore = Text(screenWidth / 2, screenHeight /3, (255,255,255), int(screenHeight / 7))
+ScoreText = Text(screenWidth / 2, screenHeight / 3, (255,255,255), int(screenHeight / 7))
+highScoreText = Text(screenHeight / 40, screenHeight / 40, (220,220,220), int(screenHeight / 20))
+
+restartInfoText = Text(screenWidth /2, screenHeight * 5/8, (200,200,200), int(screenHeight / 16))
 
 # Buttons
 startButton = StartButton((screenWidth - startButtonTemp.scale * 2.3) / 2, screenHeight * 2/3)
+
+# Variables
+highScore = 0
 
 # Main Loop
 playing = True
@@ -718,8 +723,14 @@ while(playing):
             if(event.type == pygame.KEYDOWN):
                 # Escape / Quit
                 if(event.key == pygame.K_ESCAPE):
-                    running = False
-                    break
+                    pass
+                    # running = False
+                    # break
+                    
+                # Restart If Dead
+                if(event.key == pygame.K_SPACE):
+                    if(gameState == "death"):
+                        gameState = "restart"
         
         # Get Mouse Input
         mousePos = pygame.mouse.get_pos()
@@ -805,9 +816,17 @@ while(playing):
             score.renderRight(player.score)
 
         if(gameState == "death"):
-            finalScore.renderCentered(player.score)
-            if(timeCount - (deathTime + 4) > 4):
-                gameState = "restart"
+            # Save High Score
+            highScore = max(highScore, player.score)
+
+            # Render Score
+            ScoreText.renderCentered(str(player.score))
+
+            # Render High Score
+            highScoreText.renderLeft("HIGHSCORE: " + str(highScore))
+
+            # Tells You To Press Space
+            restartInfoText.renderCentered("PRESS SPACE TO RESTART")
 
         if(gameState == "restart"):
             running = False
