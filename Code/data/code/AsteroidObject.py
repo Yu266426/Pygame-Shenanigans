@@ -1,7 +1,4 @@
-import pygame
 import random
-
-from pygame import mixer
 
 from data.code.Settings import *
 from data.code.Constants import *

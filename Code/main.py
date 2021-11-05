@@ -113,7 +113,7 @@ highScoreText = Text(screenHeight / 40, screenHeight / 40, (220,220,220), int(sc
 restartInfoText = Text(screenWidth /2, screenHeight * 5/8, (200,200,200), int(screenHeight / 16))
 
 # Buttons
-startButton = StartButton((screenWidth - startButtonScale[0]) / 2, screenHeight * 2/3)
+startButton = pygame.sprite.GroupSingle(StartButton(((screenWidth - startButtonScale[0]) / 2, screenHeight * 2/3)))
 
 # Variables
 scoreKeeper = player.sprite.score
@@ -175,10 +175,11 @@ while(playing):
         # Run Games
         if(gameState == "menu"):
             # Checks If Mouse Is Over/Clicking Button
-            if(startButton.check(mousePos, mouseState)):
+            if(startButton.sprite.check(mousePos, mouseState)):
                 gameState = "main"
                 timeCount = 0
             
+            startButton.sprite.rotate()
             startButton.draw(screen)
             title.draw(screen)
 

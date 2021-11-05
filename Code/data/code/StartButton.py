@@ -8,25 +8,17 @@ from pygame import mixer
 from data.code.FileSetup import *
 from data.code.Constants import *
 from data.code.Settings import *
+from data.code.Rotatable import Rotatable
 
-class StartButton:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+class StartButton(Rotatable):
+    def __init__(self, pos):
+        super().__init__(pos, os.path.join(ASSET_FOLDER, "Start Button.png"), startButtonScale, 0)
 
-        self.angle = 0
         self.selected = False
-
-        self.scale = startButtonScale
-
-        self.image = pygame.image.load(os.path.join(ASSET_FOLDER, "Start Button.png")).convert_alpha()
-        self.image = pygame.transform.scale(self.image, startButtonScale)
 
         self.pressedSound = mixer.Sound(os.path.join(AUDIO_FOLDER, "Laser.wav"))
         self.pressedSound.set_volume(0.6 * volume)
 
-        self.rect = self.image.get_rect(center = self.image.get_rect(topleft = (self.x, self.y)).center)
-    
     # Checks it mouse is over the button, and if it's pressed
     def check(self, mousePos, mouseState):
         # If mouse is over the button
@@ -41,16 +33,14 @@ class StartButton:
         
         return False
 
-    # Draw Button
-    def draw(self, drawSurface):
-        rotatedImage = self.image
-
+    # Rotate
+    def rotate(self):
         # If selected, enlarge slightly
         if(self.selected == True):
-            rotatedImage = pygame.transform.scale(rotatedImage, (int(self.scale * 2.3 * 1.1), int(self.scale * 1.1)))
+            self.image = pygame.transform.scale(self.baseImage, (int(self.scale[0] * 1.1), int(self.scale[1] * 1.1)))
+        else:
+            self.image = self.baseImage.copy()
         
         # Rotate The Image
-        rotatedImage = pygame.transform.rotate(rotatedImage, self.angle * 5)
-        newRect = rotatedImage.get_rect(center = self.image.get_rect(topleft = (self.x, self.y)).center)
-
-        drawSurface.blit(rotatedImage, newRect)
+        self.image = pygame.transform.rotate(self.baseImage, self.angle * 5)
+        self.rect = self.image.get_rect(center = self.baseImage.get_rect(topleft = (self.baseRect.x, self.baseRect.y)).center)
