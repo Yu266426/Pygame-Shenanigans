@@ -1,52 +1,57 @@
-import pygame
-import random
+import json
 import os
+import random
 
+import pygame
 from pygame import mixer
 
-from data.code.FileSetup import *
-from data.code.Constants import *
-from data.code.Settings import *
-from data.code.AsteroidObject import AsteroidObject
-
-from data.code.Player import Player
-from data.code.Laser import Laser
 from data.code.LargeAsteroidExplosion import LargeAsteroidExplosion
+from data.code.Laser import Laser
+from data.code.Player import Player
+from data.code.base.AsteroidObject import AsteroidObject
+from data.code.base.Constants import largeAsteroidScale, largeAsteroidAccuracy, largeAsteroidExplosionScale, screenScale
+from data.code.base.FileSetup import SETTINGS_FILE, AUDIO_FOLDER
+from data.code.base.Images import largeAsteroidImage
+
+with open(SETTINGS_FILE) as file:
+    settings = json.load(file)
+
+
+def getDirection(directionPos, pos):
+    direction = pygame.math.Vector2(0, 0)
+
+    direction.x = directionPos[0] - (pos[0] + largeAsteroidScale[0] / 2)
+    direction.y = directionPos[1] - (pos[1] + largeAsteroidScale[1] / 2)
+
+    direction.normalize_ip()
+
+    angleOffset = random.randint(-largeAsteroidAccuracy, largeAsteroidAccuracy)
+    return direction.rotate(angleOffset)
+
 
 class LargeAsteroid(AsteroidObject):
     def __init__(self, pos, directionPos):
-        direction = self.getDirection(directionPos, pos)
+        direction = getDirection(directionPos, pos)
 
-        super().__init__(pos, os.path.join(ASSET_FOLDER, "Large Asteroid.png"), largeAsteroidScale,  random.randint(1,360), direction, 5, random.randint(3, 5) * screenScale, random.randint(1,5))
+        super().__init__(pos, largeAsteroidImage, largeAsteroidScale, random.randint(1, 360), direction, 5, random.randint(3, 5) * screenScale, random.randint(1, 5))
 
         self.score = 20
 
         self.removeSound = mixer.Sound(os.path.join(AUDIO_FOLDER, "Big Explosion.wav"))
-        self.removeSound.set_volume(0.5 * volume)
+        self.removeSound.set_volume(0.5 * settings["volume"])
 
-    
     # Find Angle To Player
-    def getDirection(self, directionPos, pos):
-        direction = pygame.math.Vector2(0,0)
 
-        direction.x = directionPos[0] - (pos[0] + largeAsteroidScale[0]/2)
-        direction.y = directionPos[1] - (pos[1] + largeAsteroidScale[1]/2)
-
-        direction.normalize_ip()
-
-        angleOffset = random.randint(-largeAsteroidAccuracy, largeAsteroidAccuracy)
-        return direction.rotate(angleOffset)
-
-    # Removes Health And Checks To See If Removeable
-    def remove(self, object, explosionList):
-        self.health -= object.damage
-        if(self.checkHealth() == True):
+    # Removes Health And Checks To See If Removable
+    def remove(self, collidedObject, explosionList):
+        self.health -= collidedObject.damage
+        if self.checkHealth():
             self.removeSound.play()
 
             # Adds Score If Needed
-            if(isinstance(object, Laser)):
-                if(isinstance(object.origin, Player)):
-                    object.origin.addScore(self.score)
+            if isinstance(collidedObject, Laser):
+                if isinstance(collidedObject.origin, Player):
+                    collidedObject.origin.addScore(self.score)
 
             explosionList.add(LargeAsteroidExplosion((self.rect.center[0] - largeAsteroidExplosionScale[0] / 2, self.rect.center[1] - largeAsteroidExplosionScale[1] / 2)))
 
