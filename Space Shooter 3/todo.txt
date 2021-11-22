@@ -1,19 +1,14 @@
 Background Stars:
-    Have a way to autofill in new chunks, and remove the ones behind
-
-    Parallax effect, with the furthest ones being the smaller ones √
     Add slight twinkling effect
 
     Maybe have size determine colour a little too?
-
-laser - asteroid interactions (Halfway, need to add laser particles)
-
-player - asteroid interactions
-
-Have explosion particles move away from player
 
 Asteroid Spawning System:
     Appears around player
     Randomly dotted around
 
-Optimize rendering, by not rendering those out of view.
+player - asteroid interactions (Inplement Dying)
+
+Have explosion particles move away from player (interactions)
+
+Just noticed it's fun to weave inbetween the stars, maybe have something similar kill you if you bump it?

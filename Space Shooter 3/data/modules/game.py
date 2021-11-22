@@ -37,7 +37,7 @@ class Game:
         # * Objects
         # Star Field
         self.star_list = pygame.sprite.Group()
-        self.generate_starfield((-5000, -5000), (5000, 5000), 1000)
+        self.generate_starfield((-200, -200), (1000, 1000), 80)
 
         # Group Singles
         self.player = pygame.sprite.GroupSingle(Player((self.display.get_width() / 2, self.display.get_height() / 2)))
@@ -46,8 +46,6 @@ class Game:
         self.laser_list = pygame.sprite.Group()
         self.asteroid_list = pygame.sprite.Group()
         self.explosion_list = pygame.sprite.Group()
-
-        self.asteroid_list.add(LargeAsteroid((200, 200), 45))
 
         # Cooldowns
         self.fire_countdown = 0
@@ -58,7 +56,39 @@ class Game:
         for l in range(star_count):
             x = random.randint(p1[0], p2[0])
             y = random.randint(p1[1], p2[1])
-            self.star_list.add(BackgroundStar((x, y), random.randint(2, 5)))
+            self.star_list.add(BackgroundStar((x, y), get_random_float((2, 6)), abs(p1[0] - p2[0])))
+
+    # Draw sprites visible
+    def draw_group(self, group):
+        for sprite in group.sprites():
+            if sprite.rect.colliderect(self.display.get_rect()):
+                self.display.blit(sprite.image, sprite.rect.topleft)
+
+    # Returns the world scroll based on target
+    def get_scroll(self, target):
+        target_x = target.x - self.display.get_width() / 2
+        target_y = target.y - self.display.get_height() / 2
+        self.scroll += pygame.math.Vector2((target_x - self.scroll.x) / self.follow_room * self.delta, (target_y - self.scroll.y) / self.follow_room * self.delta)
+
+    # * Spawners
+    # Spawns laser, and handles cooldown
+    def spawn_laser(self, spawner):
+        if self.fire_countdown == 0 and spawner.is_firing:
+            self.laser_list.add(Laser(spawner.pos, spawner.angle, spawner))
+            self.fire_countdown = float(10)
+        else:
+            if self.fire_countdown > 0:
+                self.fire_countdown -= 1 * self.delta
+            else:
+                self.fire_countdown = 0
+
+    # General spawner for asteroids
+    def spawn_asteroids(self):
+        pass
+
+    # Spawn large asteroid
+    def spawn_large_asteroid(self, pos, angle, speed):
+        self.asteroid_list.add(LargeAsteroid(pos, angle, speed))
 
     # Spawn explosion particles in a given radius
     def spawn_explosion_particles(self, pos, count_range, spread, size_range, speed_range, decay_rate_range, type):
@@ -72,28 +102,7 @@ class Game:
             # Spawn particles
             self.explosion_list.add(ExplosionParticle(pos + offset, get_random_float(size_range), get_random_float(speed_range), get_random_float(decay_rate_range)/30, type))
 
-    # Spawn large asteroid
-    def spawn_large_asteroid(self, pos, angle, speed):
-        self.asteroid_list.add(LargeAsteroid(pos, angle, speed))
-
-    # Returns the world scroll based on target
-    def get_scroll(self, target):
-        target_x = target.x - self.display.get_width() / 2
-        target_y = target.y - self.display.get_height() / 2
-        self.scroll += pygame.math.Vector2((target_x - self.scroll.x) / self.follow_room * self.delta, (target_y - self.scroll.y) / self.follow_room * self.delta)
-
-    # Spawns laser, and handles cooldown
-    def spawn_laser(self, spawner):
-        if self.fire_countdown == 0 and spawner.is_firing:
-            self.laser_list.add(Laser(spawner.pos, spawner.angle, spawner))
-            self.fire_countdown = float(10)
-        else:
-            if self.fire_countdown > 0:
-                self.fire_countdown -= 1 * self.delta
-            else:
-                self.fire_countdown = 0
-
-    # Check for collisions between lasers and asteroids
+    # * Collisions
     def check_laser_asteroid_collision(self):
         collision_list = pygame.sprite.groupcollide(self.asteroid_list, self.laser_list, False, False, pygame.sprite.collide_circle)
         for asteroid in collision_list:
@@ -102,17 +111,28 @@ class Game:
 
                 if asteroid.health <= 0:
                     # Generate explosion particles
-                    self.spawn_explosion_particles(asteroid.pos, (400, 430), int(asteroid.image.get_width()/2 - 30), (5, 9), (1, 3), (1, 3), "large_asteroid")
+                    self.spawn_explosion_particles(asteroid.pos, (600, 650), int(asteroid.image.get_width()/2), (5, 9), (1, 3), (1, 3), "large_asteroid")
                     asteroid.kill()
 
                 self.spawn_explosion_particles(laser.pos, (5, 8), 3, (5, 7), (1, 2), (2, 3), "laser")
                 laser.kill()
 
+    def check_player_asteroid_collisions(self):
+        collision_list = pygame.sprite.groupcollide(self.player, self.asteroid_list, False, False, pygame.sprite.collide_circle)
+        for player in collision_list:
+            for asteroid in collision_list[player]:
+                asteroid.health -= player.damage
+
+                if asteroid.health <= 0:
+                    # Generate explosion particles
+                    self.spawn_explosion_particles(asteroid.pos, (600, 650), int(asteroid.image.get_width()/2 - 30), (5, 9), (1, 3), (1, 3), "large_asteroid")
+                    asteroid.kill()
+
     # * Game states
     # Testing state
-    def test(self):
+    def game(self):
         # * Update
-        self.star_list.update(self.delta, self.scroll)
+        self.star_list.update(self.scroll, self.screen.get_size())
 
         self.player.update(self.delta, self.scroll, (self.screen.get_width() - self.display.get_width(), self.screen.get_height() - self.display.get_height()))
 
@@ -123,16 +143,17 @@ class Game:
 
         # * Collisions
         self.check_laser_asteroid_collision()
+        self.check_player_asteroid_collisions()
 
         # *  Particles
         self.explosion_list.update(self.delta, self.scroll)
 
         # * Draw
-        self.star_list.draw(self.display)
-        self.asteroid_list.draw(self.display)
-        self.laser_list.draw(self.display)
+        self.draw_group(self.star_list)
+        self.draw_group(self.asteroid_list)
+        self.draw_group(self.laser_list)
         self.player.draw(self.display)
-        self.explosion_list.draw(self.display)
+        self.draw_group(self.explosion_list)
 
     # * Game loop
     def update(self):
@@ -147,6 +168,6 @@ class Game:
 
         # Game states
         if self.game_state == "test":
-            self.test()
+            self.game()
 
         self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))

@@ -13,5 +13,5 @@ class GameObject(pygame.sprite.Sprite):
     def move(self, scroll):
         self.rect = self.pos - scroll
 
-    def update(self, delta, scroll):
+    def update(self, scroll):
         self.move(scroll)

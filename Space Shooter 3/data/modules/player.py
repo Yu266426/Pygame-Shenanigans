@@ -18,6 +18,12 @@ class Player(Rotatable):
         # Laser
         self.is_firing = True
 
+        # Collision
+        self.radius = PLAYER_IMAGE.get_width()/2
+
+        self.health = 100
+        self.damage = self.health
+
     # Gets WASD input
     def get_input(self):
         # Get keyboard input
