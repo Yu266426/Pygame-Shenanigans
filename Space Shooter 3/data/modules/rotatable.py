@@ -1,5 +1,4 @@
 import pygame
-from pygame.constants import AUDIO_ALLOW_CHANNELS_CHANGE
 
 from data.modules.game_object import GameObject
 
@@ -13,10 +12,10 @@ class Rotatable(GameObject):
         self.base_rect = self.rect.copy()
 
         self.angle = 0
-    
+
     def angle_self(self):
         self.image = pygame.transform.rotate(self.base_image, self.angle)
-    
+
     def update_rect(self):
         self.rect = self.image.get_rect(center=self.base_image.get_rect(topleft=self.base_rect.topleft).center)
 

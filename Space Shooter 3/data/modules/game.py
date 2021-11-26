@@ -1,14 +1,15 @@
-import pygame
 import random
 import time
 
-from data.modules.helper import get_random_float
+import pygame
 
-from data.modules.player import Player
-from data.modules.laser import Laser
-from data.modules.large_asteroid import LargeAsteroid
 from data.modules.background_stars import BackgroundStar
 from data.modules.explosion_particles import ExplosionParticle
+from data.modules.helper import get_random_float, get_angle_to, generate_offset
+from data.modules.large_asteroid import LargeAsteroid
+from data.modules.laser import Laser
+from data.modules.medium_asteroid import MediumAsteroid
+from data.modules.player import Player
 
 
 class Game:
@@ -32,12 +33,12 @@ class Game:
 
         # World
         self.scroll = pygame.math.Vector2(0, 0)
-        self.follow_room = 25
+        self.follow_room = 15
 
         # * Objects
         # Star Field
         self.star_list = pygame.sprite.Group()
-        self.generate_starfield((-200, -200), (1000, 1000), 80)
+        self.generate_star_field((-200, -200), (1000, 1000), 80)
 
         # Group Singles
         self.player = pygame.sprite.GroupSingle(Player((self.display.get_width() / 2, self.display.get_height() / 2)))
@@ -49,14 +50,18 @@ class Game:
 
         # Cooldowns
         self.fire_countdown = 0
+        self.asteroid_spawn_countdown = 0
+
+        # * Progression
+        self.asteroid_spawn_rate = float(200)
 
     # * Useful functions
     # Generate stars between two points
-    def generate_starfield(self, p1, p2, star_count):
-        for l in range(star_count):
+    def generate_star_field(self, p1, p2, star_count):
+        for star in range(star_count):
             x = random.randint(p1[0], p2[0])
             y = random.randint(p1[1], p2[1])
-            self.star_list.add(BackgroundStar((x, y), get_random_float((2, 6)), abs(p1[0] - p2[0])))
+            self.star_list.add(BackgroundStar((x, y), get_random_float(2, 6), abs(p1[0] - p2[0])))
 
     # Draw sprites visible
     def draw_group(self, group):
@@ -68,7 +73,7 @@ class Game:
     def get_scroll(self, target):
         target_x = target.x - self.display.get_width() / 2
         target_y = target.y - self.display.get_height() / 2
-        self.scroll += pygame.math.Vector2((target_x - self.scroll.x) / self.follow_room * self.delta, (target_y - self.scroll.y) / self.follow_room * self.delta)
+        self.scroll += pygame.math.Vector2((target_x - self.scroll.x) / self.follow_room, (target_y - self.scroll.y) / self.follow_room) * self.delta
 
     # * Spawners
     # Spawns laser, and handles cooldown
@@ -82,68 +87,118 @@ class Game:
             else:
                 self.fire_countdown = 0
 
-    # General spawner for asteroids
-    def spawn_asteroids(self):
-        pass
+    # General spawners
+    def spawn_asteroids(self, target):
+        if self.asteroid_spawn_countdown == 0:
+            # Get target heading
+            target_heading = pygame.math.Vector2(target.input.x, target.input.y)
 
-    # Spawn large asteroid
-    def spawn_large_asteroid(self, pos, angle, speed):
-        self.asteroid_list.add(LargeAsteroid(pos, angle, speed))
+            # Offset from player
+            if target_heading.length() == 0:
+                # Player isn't moving, so comes from all angles
+                offset = generate_offset(800)
+            else:
+                # Player moving, place in front so that they run into the asteroids
+                offset = generate_offset(800, offset_direction=target_heading, angle_randomization=(-50, 50))
 
-    # Spawn explosion particles in a given radius
+            spawn_position = target.pos + offset
+            angle = get_angle_to(spawn_position - self.scroll, target.rect.center) + get_random_float(-10, 10)
+
+            self.asteroid_list.add(LargeAsteroid(spawn_position, angle))
+
+            # Add cooldown
+            self.asteroid_spawn_countdown = float(self.asteroid_spawn_rate)
+        else:
+            if self.asteroid_spawn_countdown > 0:
+                self.asteroid_spawn_countdown -= 1 * self.delta
+            else:
+                self.asteroid_spawn_countdown = 0
+
+        self.asteroid_spawn_rate -= 15
+        if self.asteroid_spawn_rate < 30:
+            self.asteroid_spawn_rate = float(30)
+
     def spawn_explosion_particles(self, pos, count_range, spread, size_range, speed_range, decay_rate_range, type):
         for particle in range(random.randint(count_range[0], count_range[1])):
             # Generate offset to fill in the asteroid
-            offset = pygame.math.Vector2(1, 1)
-            offset.normalize_ip()
-            offset.rotate_ip(random.randint(0, 360))
-            offset *= random.randint(1, spread)
+            offset = generate_offset(get_random_float(0, spread))
 
             # Spawn particles
-            self.explosion_list.add(ExplosionParticle(pos + offset, get_random_float(size_range), get_random_float(speed_range), get_random_float(decay_rate_range)/30, type))
+            self.explosion_list.add(ExplosionParticle(pos + offset, get_random_float(size_range[0], size_range[1]), get_random_float(speed_range[0], speed_range[1]), get_random_float(decay_rate_range[0], decay_rate_range[1]) / 30, type))
+
+    # Explosion spawners
+    def spawn_large_asteroid_explosion_particles(self, asteroid):
+        self.spawn_explosion_particles(asteroid.pos, (200, 300), int(asteroid.image.get_width() / 2 - 20), (9, 15), (2, 4), (5, 9), "large_asteroid")
+
+    def spawn_medium_asteroid_explosion_particles(self, asteroid):
+        self.spawn_explosion_particles(asteroid.pos, (50, 100), int(asteroid.image.get_width() / 2 - 20), (9, 15), (2, 4), (5, 9), "medium_asteroid")
 
     # * Collisions
     def check_laser_asteroid_collision(self):
         collision_list = pygame.sprite.groupcollide(self.asteroid_list, self.laser_list, False, False, pygame.sprite.collide_circle)
         for asteroid in collision_list:
-            for laser in collision_list[asteroid]:
-                asteroid.health -= laser.damage
+            # Get laser
+            laser = collision_list[asteroid][0]
 
-                if asteroid.health <= 0:
-                    # Generate explosion particles
-                    self.spawn_explosion_particles(asteroid.pos, (600, 650), int(asteroid.image.get_width()/2), (5, 9), (1, 3), (1, 3), "large_asteroid")
-                    asteroid.kill()
+            asteroid.health -= laser.damage
+            if asteroid.health <= 0:
+                if isinstance(asteroid, LargeAsteroid):
+                    self.spawn_large_asteroid_explosion_particles(asteroid)
 
-                self.spawn_explosion_particles(laser.pos, (5, 8), 3, (5, 7), (1, 2), (2, 3), "laser")
-                laser.kill()
+                    # Spawn in the medium asteroids
+                    for medium_asteroid in range(random.randint(2, 4)):
+                        spawn_pos = asteroid.pos + generate_offset(get_random_float(0, asteroid.image.get_width() / 3))
+                        spawn_direction = asteroid.direction + get_random_float(-15, 15)
+                        self.asteroid_list.add(MediumAsteroid(spawn_pos, spawn_direction))
+
+                elif isinstance(asteroid, MediumAsteroid):
+                    self.spawn_medium_asteroid_explosion_particles(asteroid)
+
+                asteroid.kill()
+
+            self.spawn_explosion_particles(laser.pos, (5, 8), 3, (5, 7), (1, 2), (2, 3), "laser")
+            laser.kill()
 
     def check_player_asteroid_collisions(self):
-        collision_list = pygame.sprite.groupcollide(self.player, self.asteroid_list, False, False, pygame.sprite.collide_circle)
-        for player in collision_list:
-            for asteroid in collision_list[player]:
-                asteroid.health -= player.damage
+        collision_list = pygame.sprite.groupcollide(self.asteroid_list, self.player, False, False, pygame.sprite.collide_circle)
+        for asteroid in collision_list:
+            player = collision_list[asteroid][0]
 
-                if asteroid.health <= 0:
-                    # Generate explosion particles
-                    self.spawn_explosion_particles(asteroid.pos, (600, 650), int(asteroid.image.get_width()/2 - 30), (5, 9), (1, 3), (1, 3), "large_asteroid")
-                    asteroid.kill()
+            asteroid.health -= player.damage
+            if asteroid.health <= 0:
+                # Generate explosion particles
+                if isinstance(asteroid, LargeAsteroid):
+                    self.spawn_large_asteroid_explosion_particles(asteroid)
+
+                    # Spawn in the medium asteroids
+                    for medium_asteroid in range(random.randint(2, 4)):
+                        spawn_pos = asteroid.pos + generate_offset(get_random_float(0, asteroid.image.get_width() / 3))
+                        spawn_direction = asteroid.direction + get_random_float(-15, 15)
+                        self.asteroid_list.add(MediumAsteroid(spawn_pos, spawn_direction))
+
+                elif isinstance(asteroid, MediumAsteroid):
+                    self.spawn_medium_asteroid_explosion_particles(asteroid)
+
+                asteroid.kill()
 
     # * Game states
     # Testing state
     def game(self):
-        # * Update
-        self.star_list.update(self.scroll, self.screen.get_size())
-
-        self.player.update(self.delta, self.scroll, (self.screen.get_width() - self.display.get_width(), self.screen.get_height() - self.display.get_height()))
-
-        self.spawn_laser(self.player.sprite)
-
-        self.laser_list.update(self.delta, self.scroll)
-        self.asteroid_list.update(self.delta, self.scroll, self.player.sprite)
-
         # * Collisions
         self.check_laser_asteroid_collision()
         self.check_player_asteroid_collisions()
+
+        # * Update
+        self.star_list.update(self.delta, self.scroll, self.screen.get_size())
+
+        self.player.update(self.delta, self.scroll)
+
+        self.spawn_laser(self.player.sprite)
+
+        self.spawn_asteroids(self.player.sprite)
+
+        self.laser_list.update(self.delta, self.scroll)
+        self.asteroid_list.update(self.delta, self.scroll, self.player.sprite, self.display.get_rect())
 
         # *  Particles
         self.explosion_list.update(self.delta, self.scroll)
@@ -157,7 +212,7 @@ class Game:
 
     # * Game loop
     def update(self):
-        # Gets deltatime * targetFPS
+        # Gets delta time * targetFPS
         self.delta = (time.time() - self.previous_time) * self.target_FPS
         self.previous_time = time.time()
 

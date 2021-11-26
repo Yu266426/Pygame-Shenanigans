@@ -2,6 +2,7 @@ from data.modules.rotatable import Rotatable
 from data.modules.images import LASER_IMAGE
 from data.modules.helper import get_movement, check_distance
 
+
 class Laser(Rotatable):
     def __init__(self, pos, angle, origin):
         super().__init__(pos, LASER_IMAGE)
@@ -28,5 +29,3 @@ class Laser(Rotatable):
 
         if check_distance(self.pos, self.origin.pos, 1000):
             self.kill()
-
-    

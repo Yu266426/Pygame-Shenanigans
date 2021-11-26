@@ -1,14 +1,14 @@
-Background Stars:
-    Add slight twinkling effect
-
-    Maybe have size determine colour a little too?
-
 Asteroid Spawning System:
-    Appears around player
     Randomly dotted around
 
-player - asteroid interactions (Inplement Dying)
+player - asteroid interactions (Implement Dying)
 
-Have explosion particles move away from player (interactions)
+have new explosion system, where explosions are added to a queue, and they have prolonged explosions.
 
-Just noticed it's fun to weave inbetween the stars, maybe have something similar kill you if you bump it?
+Quasars that spawn around you, with a spinning beam that kills you.
+
+Background Stars:
+    Maybe have size determine colour a little too?
+
+Possible lag:
+    Have explosion particles move away from player (interactions)

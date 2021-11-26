@@ -9,9 +9,3 @@ class GameObject(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=pos)
 
         self.pos = pygame.math.Vector2(pos[0], pos[1])
-
-    def move(self, scroll):
-        self.rect = self.pos - scroll
-
-    def update(self, scroll):
-        self.move(scroll)
