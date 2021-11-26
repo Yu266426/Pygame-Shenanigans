@@ -60,10 +60,13 @@ class Player(Rotatable):
             self.is_firing = False
 
     # Gets the relative angle to the mouse
-    def get_angle_to_mouse(self):
+    def get_angle_to_mouse(self, display_ratio):
         mouse_pos = pygame.mouse.get_pos()
 
-        self.angle = get_angle_to(self.rect.center, mouse_pos)
+        relative_mouse_x = mouse_pos[0] * display_ratio
+        relative_mouse_y = mouse_pos[1] * display_ratio
+
+        self.angle = get_angle_to(self.rect.center, (relative_mouse_x, relative_mouse_y))
 
     # Moves the player
     def move(self, delta, scroll):
@@ -76,10 +79,10 @@ class Player(Rotatable):
         self.base_rect.center = self.pos - scroll
 
     # Runs all needed functions
-    def update(self, delta, scroll):
+    def update(self, delta, scroll, display_ratio):
         self.get_input()
 
         self.move(delta, scroll)
 
-        self.get_angle_to_mouse()
+        self.get_angle_to_mouse(display_ratio)
         self.update_angle()

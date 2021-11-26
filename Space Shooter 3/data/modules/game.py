@@ -2,7 +2,6 @@ import random
 import time
 
 import pygame
-
 from data.modules.background_stars import BackgroundStar
 from data.modules.explosion_particles import ExplosionParticle
 from data.modules.helper import get_random_float, get_angle_to, generate_offset
@@ -38,7 +37,7 @@ class Game:
         # * Objects
         # Star Field
         self.star_list = pygame.sprite.Group()
-        self.generate_star_field((-200, -200), (1000, 1000), 80)
+        self.generate_star_field((-200, -200), (self.display.get_width() + 200, self.display.get_height() + 200), 80)
 
         # Group Singles
         self.player = pygame.sprite.GroupSingle(Player((self.display.get_width() / 2, self.display.get_height() / 2)))
@@ -88,7 +87,8 @@ class Game:
                 self.fire_countdown = 0
 
     # General spawners
-    def spawn_asteroids(self, target):
+    # TODO: add batch spawning, then adjust rates
+    def spawn_asteroids(self, target, delta):
         if self.asteroid_spawn_countdown == 0:
             # Get target heading
             target_heading = pygame.math.Vector2(target.input.x, target.input.y)
@@ -114,7 +114,7 @@ class Game:
             else:
                 self.asteroid_spawn_countdown = 0
 
-        self.asteroid_spawn_rate -= 15
+        self.asteroid_spawn_rate -= 0.3 * delta
         if self.asteroid_spawn_rate < 30:
             self.asteroid_spawn_rate = float(30)
 
@@ -131,7 +131,7 @@ class Game:
         self.spawn_explosion_particles(asteroid.pos, (200, 300), int(asteroid.image.get_width() / 2 - 20), (9, 15), (2, 4), (5, 9), "large_asteroid")
 
     def spawn_medium_asteroid_explosion_particles(self, asteroid):
-        self.spawn_explosion_particles(asteroid.pos, (50, 100), int(asteroid.image.get_width() / 2 - 20), (9, 15), (2, 4), (5, 9), "medium_asteroid")
+        self.spawn_explosion_particles(asteroid.pos, (50, 100), int(asteroid.image.get_width() / 2 - 20), (8, 13), (2, 4), (9, 15), "medium_asteroid")
 
     # * Collisions
     def check_laser_asteroid_collision(self):
@@ -189,13 +189,13 @@ class Game:
         self.check_player_asteroid_collisions()
 
         # * Update
-        self.star_list.update(self.delta, self.scroll, self.screen.get_size())
+        self.star_list.update(self.delta, self.scroll, self.display.get_size())
 
-        self.player.update(self.delta, self.scroll)
+        self.player.update(self.delta, self.scroll, self.display.get_width() / self.screen.get_width())
 
         self.spawn_laser(self.player.sprite)
 
-        self.spawn_asteroids(self.player.sprite)
+        self.spawn_asteroids(self.player.sprite, self.delta)
 
         self.laser_list.update(self.delta, self.scroll)
         self.asteroid_list.update(self.delta, self.scroll, self.player.sprite, self.display.get_rect())

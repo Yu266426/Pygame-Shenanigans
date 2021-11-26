@@ -10,5 +10,9 @@ Quasars that spawn around you, with a spinning beam that kills you.
 Background Stars:
     Maybe have size determine colour a little too?
 
+Add trail behind player
+
+screen shake
+
 Possible lag:
     Have explosion particles move away from player (interactions)
