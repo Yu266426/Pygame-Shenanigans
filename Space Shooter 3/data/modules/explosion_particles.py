@@ -9,7 +9,8 @@ colour_palette = {
 	"large_asteroid": [(235, 143, 30), (235, 62, 14), (255, 208, 54)],
 	"medium_asteroid": [(240, 109, 23), (246, 143, 35), (245, 162, 25)],
 	"laser": [(252, 207, 3), (255, 248, 43), (255, 166, 0)],
-	"player": [(235, 143, 30), (235, 62, 14), (255, 208, 54), (240, 109, 23), (246, 143, 35), (245, 162, 25), (252, 207, 3), (255, 248, 43), (255, 166, 0)]
+	"player": [(235, 143, 30), (235, 62, 14), (255, 208, 54), (240, 109, 23), (246, 143, 35), (245, 162, 25), (252, 207, 3), (255, 248, 43), (255, 166, 0)],
+	"player_trail": [(3, 232, 252), (32, 179, 247), (0, 226, 230)]
 }
 
 
@@ -48,7 +49,8 @@ class ExplosionParticle(GameObject):
 		if not check_distance(self.pos, player_pos, 25):
 			speed = self.movement.length()
 			self.movement = self.pos - player_pos
-			self.movement.normalize_ip()
+			if self.movement.length() != 0:
+				self.movement.normalize_ip()
 			self.movement *= speed
 
 	def update(self, delta, scroll, player_pos):

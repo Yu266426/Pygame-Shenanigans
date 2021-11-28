@@ -3,8 +3,6 @@ Asteroid Spawning System:
 
 Quasars that spawn around you, with a spinning beam that kills you.
 
-Add trail behind player
-
 Background Stars:
     Maybe have size determine colour a little too?
 

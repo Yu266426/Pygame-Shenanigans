@@ -8,7 +8,7 @@ from data.modules.background_stars import BackgroundStar
 from data.modules.bar import Bar
 from data.modules.explosion_particles import ExplosionParticle
 from data.modules.files import LASER_FIRE_AUDIO_PATH, LASER_EXPLOSION_AUDIO_PATH, LARGE_ASTEROID_EXPLOSION_AUDIO_PATH, MEDIUM_ASTEROID_EXPLOSION_AUDIO_PATH, PLAYER_EXPLOSION_AUDIO_PATH
-from data.modules.helper import get_random_float, get_angle_to, generate_offset
+from data.modules.helper import get_random_float, get_angle_to, generate_offset, get_movement
 from data.modules.images import PLAYER_IMAGE
 from data.modules.large_asteroid import LargeAsteroid
 from data.modules.laser import Laser
@@ -268,6 +268,8 @@ class Game:
 		self.star_list.update(self.delta, self.offset_scroll, self.display.get_size())
 
 		self.player.update(self.delta, self.offset_scroll, self.display.get_width() / self.screen.get_width())
+		if self.player.sprite is not None:
+			self.spawn_explosion_particles(self.player.sprite.pos + get_movement(self.player.sprite.angle, -12), (1, 2), 3, (5, 8), (0, 1), (8, 14), "player_trail")
 
 		self.spawn_laser(self.player.sprite)
 
