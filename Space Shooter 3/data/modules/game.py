@@ -9,6 +9,7 @@ from data.modules.bar import Bar
 from data.modules.explosion_particles import ExplosionParticle
 from data.modules.files import LASER_FIRE_AUDIO_PATH, LASER_EXPLOSION_AUDIO_PATH, LARGE_ASTEROID_EXPLOSION_AUDIO_PATH, MEDIUM_ASTEROID_EXPLOSION_AUDIO_PATH, PLAYER_EXPLOSION_AUDIO_PATH
 from data.modules.helper import get_random_float, get_angle_to, generate_offset
+from data.modules.images import PLAYER_IMAGE
 from data.modules.large_asteroid import LargeAsteroid
 from data.modules.laser import Laser
 from data.modules.medium_asteroid import MediumAsteroid
@@ -23,6 +24,7 @@ class Game:
 		# Display for drawing on
 		self.display = pygame.Surface((800, 800))
 		pygame.display.set_caption("Space Shooter 3")
+		pygame.display.set_icon(PLAYER_IMAGE)
 
 		# FPS setup
 		self.FPS = 60
@@ -169,10 +171,10 @@ class Game:
 
 	# Explosion spawners
 	def spawn_large_asteroid_explosion_particles(self, asteroid):
-		self.spawn_explosion_particles(asteroid.pos, (200, 300), int(asteroid.image.get_width() / 2 - 20), (9, 15), (2, 4), (5, 9), "large_asteroid")
+		self.spawn_explosion_particles(asteroid.pos, (200, 300), int(asteroid.image.get_width() / 2 - 20), (9, 15), (2, 4), (3, 6), "large_asteroid")
 
 	def spawn_medium_asteroid_explosion_particles(self, asteroid):
-		self.spawn_explosion_particles(asteroid.pos, (50, 100), int(asteroid.image.get_width() / 2 - 20), (8, 13), (2, 4), (9, 15), "medium_asteroid")
+		self.spawn_explosion_particles(asteroid.pos, (50, 100), int(asteroid.image.get_width() / 2 - 20), (8, 13), (2, 4), (5, 7), "medium_asteroid")
 
 	def spawn_player_explosion_particles(self):
 		for loop in range(3):
@@ -275,7 +277,7 @@ class Game:
 		self.asteroid_list.update(self.delta, self.offset_scroll, self.player_pos, self.display.get_rect())
 
 		# *  Particles
-		self.explosion_list.update(self.delta, self.offset_scroll)
+		self.explosion_list.update(self.delta, self.offset_scroll, self.player_pos)
 
 		# * Draw
 		self.draw_group(self.star_list)
