@@ -17,10 +17,10 @@ fps_timer = 0
 # Game loop
 running = True
 while running:
-    # Limit framerate
+    # * Limit framerate
     # clock.tick(60)
 
-    # Inputs
+    # * Inputs
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -29,7 +29,7 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 running = False
 
-    # Run game update method
+    # * Run game update method
     game.update()
 
     # ! FPS TEMP
@@ -37,10 +37,10 @@ while running:
     fps_counter += 1
     if fps_timer > 1:
         fps_timer -= 1
-        print(fps_counter)
+        # print(fps_counter)
         fps_counter = 0
 
-    # Update display
+    # * Update display
     pygame.display.update()
 
 pygame.quit()

@@ -9,7 +9,8 @@ class Laser(Rotatable):
 
         self.angle = angle
 
-        self.movement = get_movement(self.angle, 14)
+        # (direction, speed)
+        self.movement = get_movement(self.angle, 16)
 
         self.origin = origin
 

@@ -3,16 +3,22 @@ Asteroid Spawning System:
 
 player - asteroid interactions (Implement Dying)
 
-have new explosion system, where explosions are added to a queue, and they have prolonged explosions.
-
 Quasars that spawn around you, with a spinning beam that kills you.
-
-Background Stars:
-    Maybe have size determine colour a little too?
 
 Add trail behind player
 
 screen shake
+
+Background Stars:
+    Maybe have size determine colour a little too?
+
+Alternative control methods:
+    Perhaps turning with Q E and fire with space
+    Have forward be the direction of the ship?
+
+have new explosion system, where explosions are added to a queue, and they have prolonged explosions.
+
+Build event system for game events?
 
 Possible lag:
     Have explosion particles move away from player (interactions)

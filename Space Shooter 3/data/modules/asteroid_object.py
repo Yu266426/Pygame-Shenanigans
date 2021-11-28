@@ -3,7 +3,7 @@ from data.modules.rotatable import Rotatable
 
 
 class AsteroidObject(Rotatable):
-    def __init__(self, pos, image, direction, speed, spin_speed, health, delete_range=2000):
+    def __init__(self, pos, image, direction, speed, spin_speed, health, damage, delete_range=2000):
         super().__init__(pos, image)
 
         self.angle = 0
@@ -18,6 +18,7 @@ class AsteroidObject(Rotatable):
         self.delete_range = delete_range
 
         self.health = health
+        self.damage = damage
 
     def move(self, delta, scroll):
         self.pos += self.movement * delta
@@ -26,12 +27,12 @@ class AsteroidObject(Rotatable):
 
         self.angle += self.spin_speed * delta
 
-    def update(self, delta, scroll, player, display):
+    def update(self, delta, scroll, player_pos, display):
         # Only update angle if it is visible
         if self.rect.colliderect(display):
             self.angle_self()
 
         self.move(delta, scroll)
 
-        if check_distance(self.pos, player.pos, self.delete_range):
+        if check_distance(self.pos, player_pos, self.delete_range):
             self.kill()
