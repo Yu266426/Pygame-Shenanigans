@@ -8,12 +8,14 @@ from data.modules.background_stars import BackgroundStar
 from data.modules.bar import Bar
 from data.modules.explosion_particles import ExplosionParticle
 from data.modules.files import LASER_FIRE_AUDIO_PATH, LASER_EXPLOSION_AUDIO_PATH, LARGE_ASTEROID_EXPLOSION_AUDIO_PATH, MEDIUM_ASTEROID_EXPLOSION_AUDIO_PATH, PLAYER_EXPLOSION_AUDIO_PATH
+from data.modules.fireballs import FireBall
 from data.modules.helper import get_random_float, get_angle_to, generate_offset, get_movement
 from data.modules.images import PLAYER_IMAGE
 from data.modules.large_asteroid import LargeAsteroid
 from data.modules.laser import Laser
 from data.modules.medium_asteroid import MediumAsteroid
 from data.modules.player import Player
+# from data.modules.player_alternate_controls import Player
 from data.modules.text import Text
 
 
@@ -53,6 +55,7 @@ class Game:
 		# Groups
 		self.laser_list = pygame.sprite.Group()
 		self.asteroid_list = pygame.sprite.Group()
+		self.fireball_list = pygame.sprite.Group()
 		self.explosion_list = pygame.sprite.Group()
 
 		# * Cooldowns
@@ -71,10 +74,14 @@ class Game:
 
 		# * UI
 		self.health_bar = Bar((20, 20), (250, 60), (50, 50, 50), (18, 161, 58))
-		self.score_text = Text((780, 20), (200, 200, 200), 40)
+		self.score_text = Text((self.display.get_width() - 20, 20), (200, 200, 200), 40)
 		self.score_text.set_text(self.player_score)
 
+		# * Effects
 		self.screen_shake = float(0)
+
+		# List stores points for sparks as [dist from center of player, angle offset, cooldown]
+		self.player_sparks = []
 
 		# * Audio
 		self.laser_fire_sound = mixer.Sound(LASER_FIRE_AUDIO_PATH)
@@ -177,8 +184,22 @@ class Game:
 		self.spawn_explosion_particles(asteroid.pos, (50, 100), int(asteroid.image.get_width() / 2 - 20), (8, 13), (2, 4), (5, 7), "medium_asteroid")
 
 	def spawn_player_explosion_particles(self):
-		for loop in range(3):
-			self.spawn_explosion_particles(self.player.sprite.pos + generate_offset(30), (150, 200), int(self.player.sprite.image.get_width()), (8, 13), (3, 5), (4, 9), "player")
+		if self.player.sprite is not None:
+			for loop in range(3):
+				self.spawn_explosion_particles(self.player.sprite.pos + generate_offset(50), (150, 200), int(self.player.sprite.image.get_width()), (8, 13), (3, 5), (4, 9), "player")
+
+	def spawn_player_spark_particles(self):
+		for spark in self.player_sparks:
+			if spark[2] <= 0:
+				self.spawn_explosion_particles(self.player_pos + get_movement(self.player.sprite.angle + spark[1], spark[0]), (2, 4), 2, (6, 9), (1, 3), (4, 7), "player")
+				spark[2] = get_random_float(1, 55)
+			else:
+				spark[2] -= self.delta
+				if spark[2] < 0:
+					spark[2] = 0
+
+	def spawn_fireball_explosion_particles(self, fireball):
+		self.spawn_explosion_particles(fireball.pos + generate_offset(50), (60, 80), 5, (8, 13), (3, 5), (4, 9), "fireball")
 
 	# * Collisions
 	def check_laser_asteroid_collision(self):
@@ -191,11 +212,9 @@ class Game:
 			if asteroid.health <= 0:
 				if isinstance(asteroid, LargeAsteroid):
 					self.screen_shake = 10
-
-					self.large_asteroid_explosion_sound.play()
-
 					self.player_score += 20
 
+					self.large_asteroid_explosion_sound.play()
 					self.spawn_large_asteroid_explosion_particles(asteroid)
 
 					# Spawn in the medium asteroids
@@ -203,6 +222,11 @@ class Game:
 						spawn_pos = asteroid.pos + generate_offset(get_random_float(0, asteroid.image.get_width() / 3))
 						spawn_direction = asteroid.direction + get_random_float(-15, 15)
 						self.asteroid_list.add(MediumAsteroid(spawn_pos, spawn_direction))
+
+					# Spawn in the fireballs
+					for fireball in range(random.randint(2, 4)):
+						spawn_pos = asteroid.pos + generate_offset(get_random_float(0, asteroid.image.get_width() / 3))
+						self.fireball_list.add(FireBall(spawn_pos, get_random_float(-180, 180), get_random_float(8, 14), get_random_float(35, 45), self.explosion_list))
 
 				elif isinstance(asteroid, MediumAsteroid):
 					self.screen_shake = 4
@@ -242,6 +266,11 @@ class Game:
 						spawn_direction = asteroid.direction + get_random_float(-15, 15)
 						self.asteroid_list.add(MediumAsteroid(spawn_pos, spawn_direction))
 
+					# Spawn in the fireballs
+					for fireball in range(random.randint(2, 4)):
+						spawn_pos = asteroid.pos + generate_offset(get_random_float(0, asteroid.image.get_width() / 3))
+						self.fireball_list.add(FireBall(spawn_pos, get_random_float(-180, 180), get_random_float(8, 14), get_random_float(23, 24), self.explosion_list))
+
 				elif isinstance(asteroid, MediumAsteroid):
 					self.screen_shake = 4
 
@@ -251,11 +280,27 @@ class Game:
 
 				asteroid.kill()
 
-			if player.health <= 0:
+			if random.randint(0, 3) == 0:
+				# [dist, angle, cooldown]
+				self.player_sparks.append([get_random_float(3, 12), get_random_float(-180, 180), float(0)])
+
+			if player.health <= 0 and self.player.sprite is not None:
 				self.screen_shake = 100
 				self.player_explosion_sound.play()
 				self.spawn_player_explosion_particles()
 				player.kill()
+
+	def check_player_fireball_collisions(self):
+		collision_list = pygame.sprite.groupcollide(self.fireball_list, self.player, False, False, pygame.sprite.collide_circle)
+		for fireball in collision_list:
+			if isinstance(fireball, FireBall):
+				player = collision_list[fireball][0]
+
+				player.health -= fireball.damage
+
+				self.medium_asteroid_explosion_sound.play()
+				self.spawn_fireball_explosion_particles(fireball)
+				fireball.kill()
 
 	# * Game states
 	# Testing state
@@ -263,6 +308,7 @@ class Game:
 		# * Collisions
 		self.check_laser_asteroid_collision()
 		self.check_player_asteroid_collisions()
+		self.check_player_fireball_collisions()
 
 		# * Update
 		self.star_list.update(self.delta, self.offset_scroll, self.display.get_size())
@@ -270,6 +316,7 @@ class Game:
 		self.player.update(self.delta, self.offset_scroll, self.display.get_width() / self.screen.get_width())
 		if self.player.sprite is not None:
 			self.spawn_explosion_particles(self.player.sprite.pos + get_movement(self.player.sprite.angle, -12), (1, 2), 3, (5, 8), (0, 1), (8, 14), "player_trail")
+			self.spawn_player_spark_particles()
 
 		self.spawn_laser(self.player.sprite)
 
@@ -277,6 +324,7 @@ class Game:
 
 		self.laser_list.update(self.delta, self.offset_scroll)
 		self.asteroid_list.update(self.delta, self.offset_scroll, self.player_pos, self.display.get_rect())
+		self.fireball_list.update(self.delta, self.offset_scroll, self.display.get_rect())
 
 		# *  Particles
 		self.explosion_list.update(self.delta, self.offset_scroll, self.player_pos)
@@ -290,9 +338,9 @@ class Game:
 
 		# * UI
 		if self.player.sprite is not None:
-			self.health_bar.draw(100, self.player.sprite.health, self.display)
+			self.health_bar.draw(self.player.sprite.max_health, self.player.sprite.health, self.display)
 		else:
-			self.health_bar.draw(100, 0, self.display)
+			self.health_bar.draw(1, 0, self.display)
 
 		self.score_text.set_text(self.player_score)
 		self.score_text.draw_right(self.display)

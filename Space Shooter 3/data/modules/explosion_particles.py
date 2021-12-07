@@ -10,7 +10,8 @@ colour_palette = {
 	"medium_asteroid": [(240, 109, 23), (246, 143, 35), (245, 162, 25)],
 	"laser": [(252, 207, 3), (255, 248, 43), (255, 166, 0)],
 	"player": [(235, 143, 30), (235, 62, 14), (255, 208, 54), (240, 109, 23), (246, 143, 35), (245, 162, 25), (252, 207, 3), (255, 248, 43), (255, 166, 0)],
-	"player_trail": [(3, 232, 252), (32, 179, 247), (0, 226, 230)]
+	"player_trail": [(3, 232, 252), (32, 179, 247), (0, 226, 230)],
+	"fireball": [(235, 143, 30), (235, 62, 14), (255, 208, 54), (240, 109, 23), (246, 143, 35), (245, 162, 25), (252, 207, 3), (255, 248, 43), (255, 166, 0)]
 }
 
 
@@ -18,7 +19,7 @@ class ExplosionParticle(GameObject):
 	def __init__(self, pos, scale, speed, decay_rate, particle_type):
 		# Make image to pass into initialization
 		image = pygame.Surface((scale, scale))
-		image.fill(colour_palette[particle_type][random.randint(0, len(colour_palette[particle_type]) - 1)])
+		image.fill(random.choice(colour_palette[particle_type]))
 
 		# Initialize
 		super().__init__(pos, image)

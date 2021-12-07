@@ -5,6 +5,8 @@ import pygame
 from data.modules.game_object import GameObject
 from data.modules.helper import get_random_float
 
+colours = [(253, 255, 242), (224, 235, 255), (255, 219, 199)]
+
 
 class BackgroundStar(GameObject):
 	def __init__(self, pos, size, bounds):
@@ -16,7 +18,7 @@ class BackgroundStar(GameObject):
 		self.starting_size = self.size
 
 		image = pygame.Surface((size, size))
-		image.fill((255, 255, 255))
+		image.fill(random.choice(colours))
 
 		super().__init__(pos, image)
 

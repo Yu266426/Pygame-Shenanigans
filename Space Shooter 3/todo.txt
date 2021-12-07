@@ -1,18 +1,3 @@
-Asteroid Spawning System:
-    Randomly dotted around
-
 Quasars that spawn around you, with a spinning beam that kills you.
 
-Background Stars:
-    Maybe have size determine colour a little too?
-
-Alternative control methods:
-    Perhaps turning with Q E and fire with space
-    Have forward be the direction of the ship?
-
-Make ship start burning when health is low
-
-have new explosion system, where explosions are added to a queue, and they have prolonged explosions.
-
-Possible lag:
-    Add glow around particles?
+Explosion system that enables a prolonged explosion (Helps with lag)

@@ -2,6 +2,7 @@ import pygame
 
 from data.modules.game import Game
 
+pygame.mixer.pre_init(buffer=2024)
 pygame.init()
 
 # Time
