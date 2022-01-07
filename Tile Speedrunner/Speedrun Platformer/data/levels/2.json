@@ -1,0 +1,99 @@
+{
+	"width": 10,
+	"height": 7,
+	"tiles": [
+		{
+			"type": "base",
+			"pos": [
+				1,
+				0
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				0,
+				1
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				1,
+				1
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				2,
+				1
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				3,
+				1
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				3,
+				2
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				4,
+				2
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				4,
+				3
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				5,
+				1
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				6,
+				1
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				6,
+				2
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				4,
+				6
+			]
+		},
+		{
+			"type": "base",
+			"pos": [
+				8,
+				1
+			]
+		}
+	],
+	"player_x": 20,
+	"player_y": 20
+}
